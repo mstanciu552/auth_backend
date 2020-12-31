@@ -1,5 +1,4 @@
 import express, { Request, Response, Router } from "express";
-import { Document, NativeError } from "mongoose";
 import User from "../schema/User.js";
 import jwt from "jsonwebtoken";
 
