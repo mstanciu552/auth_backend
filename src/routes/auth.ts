@@ -1,25 +1,39 @@
 import express, { Request, Response, Router } from "express";
-import { Document, NativeError } from "mongoose";
+import bcrypt from "bcrypt";
 import User from "../schema/User.js";
 import jwt from "jsonwebtoken";
 
 const router: Router = express.Router();
 
 // Register route
-router.post("/register", (req: Request, res: Response) => {
+router.post("/register", async (req: Request, res: Response) => {
   const { email, username, first_name, last_name, password } = req.body;
 
-  const user = new User({
-    email,
-    username,
-    first_name,
-    last_name,
-    password,
-  });
+  await User.findOne({ username }, (err: any, usernameExists: any) => {
+    if (err) {
+      throw err;
+    } else {
+      if (usernameExists) {
+        console.log(usernameExists);
+        res.send("Username already exists!");
+      } else {
+        bcrypt.hash(password, 10, (err, hashedPassword) => {
+          if (err) res.send("Failed to encrypt password!");
 
-  user.save((err) => {
-    if (err) throw err;
-    res.sendStatus(200);
+          const user = new User({
+            email,
+            username,
+            first_name,
+            last_name,
+            password: hashedPassword,
+          });
+          user.save((err) => {
+            if (err) throw err;
+            res.sendStatus(200);
+          });
+        });
+      }
+    }
   });
 });
 
@@ -30,10 +44,13 @@ router.post("/login", async (req: Request, res: Response) => {
     console.error(err)
   );
   if (user) {
-    if (password === user.password) {
-      const accessToken = jwt.sign({ user }, process.env.ACCESS_TOKEN_SECRET);
-      res.json({ accessToken });
-    } else res.send("Invalid Password");
+    bcrypt.compare(password, user.password, (err, isMatch) => {
+      if (err) throw err;
+      if (isMatch) {
+        const accessToken = jwt.sign({ user }, process.env.ACCESS_TOKEN_SECRET);
+        res.json({ accessToken });
+      } else res.send("Invalid Password");
+    });
   } else res.send("Invalid Credentials");
 });
 

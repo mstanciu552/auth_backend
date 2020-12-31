@@ -40,28 +40,55 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 var express_1 = __importDefault(require("express"));
+var bcrypt_1 = __importDefault(require("bcrypt"));
 var User_js_1 = __importDefault(require("../schema/User.js"));
 var jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 var router = express_1.default.Router();
 // Register route
-router.post("/register", function (req, res) {
-    var _a = req.body, email = _a.email, username = _a.username, first_name = _a.first_name, last_name = _a.last_name, password = _a.password;
-    var user = new User_js_1.default({
-        email: email,
-        username: username,
-        first_name: first_name,
-        last_name: last_name,
-        password: password,
+router.post("/register", function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
+    var _a, email, username, first_name, last_name, password;
+    return __generator(this, function (_b) {
+        switch (_b.label) {
+            case 0:
+                _a = req.body, email = _a.email, username = _a.username, first_name = _a.first_name, last_name = _a.last_name, password = _a.password;
+                return [4 /*yield*/, User_js_1.default.findOne({ username: username }, function (err, usernameExists) {
+                        if (err) {
+                            throw err;
+                        }
+                        else {
+                            if (usernameExists) {
+                                console.log(usernameExists);
+                                res.send("Username already exists!");
+                            }
+                            else {
+                                bcrypt_1.default.hash(password, 10, function (err, hashedPassword) {
+                                    if (err)
+                                        res.send("Failed to encrypt password!");
+                                    var user = new User_js_1.default({
+                                        email: email,
+                                        username: username,
+                                        first_name: first_name,
+                                        last_name: last_name,
+                                        password: hashedPassword,
+                                    });
+                                    user.save(function (err) {
+                                        if (err)
+                                            throw err;
+                                        res.sendStatus(200);
+                                    });
+                                });
+                            }
+                        }
+                    })];
+            case 1:
+                _b.sent();
+                return [2 /*return*/];
+        }
     });
-    user.save(function (err) {
-        if (err)
-            throw err;
-        res.sendStatus(200);
-    });
-});
+}); });
 // Login route
 router.post("/login", function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
-    var _a, username, password, user, accessToken;
+    var _a, username, password, user;
     return __generator(this, function (_b) {
         switch (_b.label) {
             case 0:
@@ -72,12 +99,16 @@ router.post("/login", function (req, res) { return __awaiter(void 0, void 0, voi
             case 1:
                 user = _b.sent();
                 if (user) {
-                    if (password === user.password) {
-                        accessToken = jsonwebtoken_1.default.sign({ user: user }, process.env.ACCESS_TOKEN_SECRET);
-                        res.json({ accessToken: accessToken });
-                    }
-                    else
-                        res.send("Invalid Password");
+                    bcrypt_1.default.compare(password, user.password, function (err, isMatch) {
+                        if (err)
+                            throw err;
+                        if (isMatch) {
+                            var accessToken = jsonwebtoken_1.default.sign({ user: user }, process.env.ACCESS_TOKEN_SECRET);
+                            res.json({ accessToken: accessToken });
+                        }
+                        else
+                            res.send("Invalid Password");
+                    });
                 }
                 else
                     res.send("Invalid Credentials");
