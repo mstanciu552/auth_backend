@@ -2,7 +2,8 @@ import { Error } from "mongoose";
 import { PassportStatic, Profile } from "passport";
 import oauth, { VerifyCallback } from "passport-google-oauth20";
 import dotenv from "dotenv";
-import User from "./schema/User.js";
+import User from "./models/User.js";
+import OAuth from "./models/OAuth.js";
 
 dotenv.config();
 
@@ -23,11 +24,11 @@ export const passportConfig = (passport: PassportStatic) => {
         done: VerifyCallback
       ) => {
         try {
-          let user = await User.findOne({ googleID: profile.id });
+          let user = await OAuth.findOne({ googleID: profile.id });
 
           if (user) done(undefined, user);
           else {
-            user = await User.create({
+            user = await OAuth.create({
               googleID: profile.id,
               displayName: profile.displayName,
               firstName: profile.name?.givenName,
@@ -43,7 +44,7 @@ export const passportConfig = (passport: PassportStatic) => {
     )
   );
   passport.serializeUser((user: any, done) => {
-    return done(null, user);
+    return done(null, user.id);
   });
 
   passport.deserializeUser((id, done) => {

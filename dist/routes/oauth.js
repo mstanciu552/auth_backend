@@ -10,5 +10,9 @@ router.get("/google", passport_1.default.authenticate("google", { scope: ["profi
 router.get("/google/callback", passport_1.default.authenticate("google", { failureRedirect: "/login" }), function (_, res) {
     res.redirect("/");
 });
+router.get("/logout", function (req, res) {
+    req.logout();
+    res.redirect("/login");
+});
 exports.default = router;
 //# sourceMappingURL=oauth.js.map

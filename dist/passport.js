@@ -42,7 +42,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.passportConfig = void 0;
 var passport_google_oauth20_1 = __importDefault(require("passport-google-oauth20"));
 var dotenv_1 = __importDefault(require("dotenv"));
-var User_js_1 = __importDefault(require("./schema/User.js"));
+var User_js_1 = __importDefault(require("./models/User.js"));
+var OAuth_js_1 = __importDefault(require("./models/OAuth.js"));
 dotenv_1.default.config();
 var GoogleStrategy = passport_google_oauth20_1.default.Strategy;
 var passportConfig = function (passport) {
@@ -57,13 +58,13 @@ var passportConfig = function (passport) {
             switch (_c.label) {
                 case 0:
                     _c.trys.push([0, 5, , 6]);
-                    return [4 /*yield*/, User_js_1.default.findOne({ googleID: profile.id })];
+                    return [4 /*yield*/, OAuth_js_1.default.findOne({ googleID: profile.id })];
                 case 1:
                     user = _c.sent();
                     if (!user) return [3 /*break*/, 2];
                     done(undefined, user);
                     return [3 /*break*/, 4];
-                case 2: return [4 /*yield*/, User_js_1.default.create({
+                case 2: return [4 /*yield*/, OAuth_js_1.default.create({
                         googleID: profile.id,
                         displayName: profile.displayName,
                         firstName: (_a = profile.name) === null || _a === void 0 ? void 0 : _a.givenName,
@@ -84,7 +85,7 @@ var passportConfig = function (passport) {
         });
     }); }));
     passport.serializeUser(function (user, done) {
-        return done(null, user);
+        return done(null, user.id);
     });
     passport.deserializeUser(function (id, done) {
         User_js_1.default.findById(id, function (err, user) { return done(err, user); });
