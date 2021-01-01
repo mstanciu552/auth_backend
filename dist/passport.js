@@ -39,51 +39,56 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-var express_1 = __importDefault(require("express"));
-var User_js_1 = __importDefault(require("../models/User.js"));
-var jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
-var router = express_1.default.Router();
-// Register route
-router.post("/register", function (req, res) {
-    var _a = req.body, email = _a.email, username = _a.username, first_name = _a.first_name, last_name = _a.last_name, password = _a.password;
-    var user = new User_js_1.default({
-        email: email,
-        username: username,
-        first_name: first_name,
-        last_name: last_name,
-        password: password,
-    });
-    user.save(function (err) {
-        if (err)
-            throw err;
-        res.sendStatus(200);
-    });
-});
-// Login route
-router.post("/login", function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
-    var _a, username, password, user, accessToken;
-    return __generator(this, function (_b) {
-        switch (_b.label) {
-            case 0:
-                _a = req.body, username = _a.username, password = _a.password;
-                return [4 /*yield*/, User_js_1.default.findOne({ username: username }).catch(function (err) {
-                        return console.error(err);
+exports.passportConfig = void 0;
+var passport_google_oauth20_1 = __importDefault(require("passport-google-oauth20"));
+var dotenv_1 = __importDefault(require("dotenv"));
+var User_js_1 = __importDefault(require("./schema/User.js"));
+dotenv_1.default.config();
+var GoogleStrategy = passport_google_oauth20_1.default.Strategy;
+var passportConfig = function (passport) {
+    passport.use(new GoogleStrategy({
+        clientID: process.env.GOOGLE_CLIENT_ID,
+        clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+        callbackURL: "/auth/google/callback",
+    }, function (_accessToken, _refreshToken, profile, done) { return __awaiter(void 0, void 0, void 0, function () {
+        var user, err_1;
+        var _a, _b;
+        return __generator(this, function (_c) {
+            switch (_c.label) {
+                case 0:
+                    _c.trys.push([0, 5, , 6]);
+                    return [4 /*yield*/, User_js_1.default.findOne({ googleID: profile.id })];
+                case 1:
+                    user = _c.sent();
+                    if (!user) return [3 /*break*/, 2];
+                    done(undefined, user);
+                    return [3 /*break*/, 4];
+                case 2: return [4 /*yield*/, User_js_1.default.create({
+                        googleID: profile.id,
+                        displayName: profile.displayName,
+                        firstName: (_a = profile.name) === null || _a === void 0 ? void 0 : _a.givenName,
+                        lastName: (_b = profile.name) === null || _b === void 0 ? void 0 : _b.familyName,
+                        photo: profile.photos ? profile.photos[0].value : "",
                     })];
-            case 1:
-                user = _b.sent();
-                if (user) {
-                    if (password === user.password) {
-                        accessToken = jsonwebtoken_1.default.sign({ user: user }, process.env.ACCESS_TOKEN_SECRET);
-                        res.json({ accessToken: accessToken });
-                    }
-                    else
-                        res.send("Invalid Password");
-                }
-                else
-                    res.send("Invalid Credentials");
-                return [2 /*return*/];
-        }
+                case 3:
+                    user = _c.sent();
+                    done(undefined, user);
+                    _c.label = 4;
+                case 4: return [3 /*break*/, 6];
+                case 5:
+                    err_1 = _c.sent();
+                    console.error(err_1);
+                    return [3 /*break*/, 6];
+                case 6: return [2 /*return*/];
+            }
+        });
+    }); }));
+    passport.serializeUser(function (user, done) {
+        return done(null, user);
     });
-}); });
-exports.default = router;
-//# sourceMappingURL=auth.js.map
+    passport.deserializeUser(function (id, done) {
+        User_js_1.default.findById(id, function (err, user) { return done(err, user); });
+    });
+};
+exports.passportConfig = passportConfig;
+//# sourceMappingURL=passport.js.map
